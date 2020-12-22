@@ -62,7 +62,7 @@ namespace CryptoCAD.Common.Tests.Helpers
         private uint GetBlocksLength(byte[] bytes, byte blockLength)
         {
             uint length = (uint)(bytes.Length / blockLength);
-            length += (bytes.Length - length * blockLength == 0 ? 0 : 1);
+            length += (uint)(bytes.Length - length * blockLength == 0 ? 0 : 1);
             return length;
         }
     }
