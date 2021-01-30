@@ -1,4 +1,3 @@
-using System.IO;
 using Microsoft.OpenApi.Models;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
@@ -6,15 +5,11 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using CryptoCAD.Data.Storage;
-using CryptoCAD.Data.Storage.Abstractions;
-using CryptoCAD.Data.Repositories;
+using CryptoCAD.Data;
+using CryptoCAD.API.Mapper;
 using CryptoCAD.Core.Services;
 using CryptoCAD.Core.Services.Abstractions;
-using CryptoCAD.Domain.Repositories;
-
 using AutoMapper;
-using CryptoCAD.API.Mapper;
 
 namespace CryptoCAD.API
 {
@@ -33,11 +28,10 @@ namespace CryptoCAD.API
             AddAutoMapper(services);
             services.AddControllers();
 
-            //services.AddDbContext<PostgreSqlContext>(options => options.UseNpgsql(Configuration.GetConnectionString("HerokuPostgresql")));
-            //services.AddIdentity<IdentityUser, IdentityRole>()
-            //    .AddEntityFrameworkStores<PostgreSqlContext>();
+            services.RegisterMongoDbRepositories();
 
-            AddServices(services);
+            services.AddTransient<ICipherService, CipherService>();
+            services.AddTransient<IHashService, HashService>();
 
             services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
                 .AddJwtBearer(options =>
@@ -96,21 +90,6 @@ namespace CryptoCAD.API
 
             var mapper = mapperConfiguration.CreateMapper();
             services.AddSingleton(mapper);
-        }
-
-        private void AddServices(IServiceCollection services)
-        {
-            services.AddSingleton<IStorageContext>(context =>
-            {
-                var path = Path.Combine(Directory.GetCurrentDirectory(), Configuration["Storage:File"]);
-                var dropCreate = Configuration["Storage:DropCreate"].ToLower() == "true";
-
-                return new StorageContext(path, dropCreate);
-            });
-            services.AddTransient<IStandardMethodsRepository, StandardMethodsRepository>();
-
-            services.AddTransient<ICipherService, CipherService>();
-            services.AddTransient<IHashService, HashService>();
         }
     }
 }
