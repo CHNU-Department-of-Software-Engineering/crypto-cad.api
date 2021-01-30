@@ -1,59 +1,71 @@
 ﻿using System;
-using System.Linq;
 using System.Collections.Generic;
+using MongoDB.Bson;
+using MongoDB.Driver;
 using CryptoCAD.Domain.Repositories;
 using CryptoCAD.Domain.Entities.Methods;
-using CryptoCAD.Data.Storage.Abstractions;
 
 namespace CryptoCAD.Data.Repositories
 {
-    public class StandardMethodsRepository : IStandardMethodsRepository
+    public class StandartMethodsRepository : IStandardMethodsRepository
     {
-        private readonly IStorageContext Context;
+        private readonly IMongoCollection<StandardMethod> _standardMethods;
 
-        public StandardMethodsRepository(IStorageContext context)
+        public StandartMethodsRepository(IMongoClient mongoClient)
         {
-            Context = context;
+            _standardMethods = mongoClient.GetDatabase("crypto_cad").GetCollection<StandardMethod>("standardMethods");
+        }
+
+        public StandartMethodsRepository(IMongoCollection<StandardMethod> collection)
+        {
+            _standardMethods = collection;
         }
 
         public void Add(StandardMethod entity)
         {
-            Context.StandardMethods.Add(entity);
+            _standardMethods.InsertOne(entity);
         }
 
         public void AddRange(IList<StandardMethod> entities)
         {
-            foreach (var entity in entities)
-            {
-                Context.StandardMethods.Add(entity);
-            }
+            _standardMethods.InsertMany(entities);
         }
 
         public StandardMethod Get(Guid id)
         {
-            return Context.StandardMethods.SingleOrDefault(x => x.Id == id);
+            return _standardMethods.Find(new BsonDocument("_id", id)).FirstOrDefault();
         }
 
         public IEnumerable<StandardMethod> GetAll()
         {
-            return Context.StandardMethods;
+            return (IEnumerable<StandardMethod>)_standardMethods.Find(Builders<StandardMethod>.Filter.Empty).ToList();
         }
 
-        public void Remove(StandardMethod entity)
+        public async void Remove(StandardMethod entity)
         {
-            Context.StandardMethods.Remove(entity);
-        }
-
-        public void Update(StandardMethod entity)
-        {
-            var toUpdate = Get(entity.Id);
-            Remove(toUpdate);
-            Add(entity);
+            await _standardMethods.DeleteOneAsync(new BsonDocument("_id", entity.Id));
         }
 
         public void SaveChanges()
         {
-            Context.SaveChanges();
+            throw new NotImplementedException();
+        }
+
+        public void Update(StandardMethod entity)
+        {
+            var filter = Builders<StandardMethod>.Filter.Eq("_id", entity.Id);
+
+            var update = Builders<StandardMethod>.Update
+                .Set("Name", entity.Name)
+                .Set("Type", entity.Type)
+                .Set("Family", entity.Family)
+                .Set("IsModifiable", entity.IsModifiable)
+                .Set("Relation", entity.Relation)
+                .Set("ParentId", entity.ParentId)
+                .Set("SecretLength", entity.SecretLength)
+                .Set("Configuration", entity.Configuration);
+
+            _standardMethods.UpdateOne(filter, update);
         }
     }
 }

@@ -170,7 +170,6 @@ namespace CryptoCAD.API.Controllers
                     }
                 }
 
-                StandardMethodsRepository.SaveChanges();
                 return Ok(result);
             }
             catch (Exception exception)
@@ -199,7 +198,6 @@ namespace CryptoCAD.API.Controllers
                 }
 
                 StandardMethodsRepository.Remove(method);
-                StandardMethodsRepository.SaveChanges();
 
                 return Ok("Successfully deleted!");
             }
